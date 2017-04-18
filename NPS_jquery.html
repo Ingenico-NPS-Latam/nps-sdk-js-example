@@ -1,0 +1,81 @@
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+<script type="text/javascript">
+
+
+jQuery.getScript("https://sandbox.nps.com.ar/sdk/v1/NPS.js",function(){  
+  
+  
+
+/**
+ * Configure Your Client Session
+ *
+ * You should configure your client session to be able to start to use NPS.js to identify your site while communicating with NPS. 
+ * To do this, use the call setClientSession. Remember to replace the client session call on sandbox with the production domain when you are ready to create real charges.
+ * 
+ * You must obtain your client session by calling from server-side the webservice method “CreateClientSession”
+*/
+NPS.setClientSession('dlqocFWidASndyWkk1SIzFAgOscSd41WCO8sgWewOu5j2aClPKr5eIyo22HiAlJw');
+
+// NPS Merchant ID
+NPS.setMerchantId('psp_test');
+
+// psp_Amount
+NPS.setAmount('120050');
+
+// psp_Country
+NPS.setCountry('CHL');
+
+// psp_Currency
+NPS.setCurrency('152');
+
+// Device Fingerprint Must Be Created Or Not
+NPS.setUseDeviceFingerprint(false);
+
+
+
+var npsSuccessResponseHandler;
+npsSuccessResponseHandler = function(paymentMethodToken) {
+  alert(paymentMethodToken.id);
+};
+
+var npsErrorResponseHandler;
+npsErrorResponseHandler = function(response) {
+  console.log(response);
+};
+
+
+PaymentMethodTokenParams = {
+      card: {
+        // holder_name: 'John Smith',
+        number: '4507990000000010',
+        exp_month: '01',
+        exp_year: '2019',
+        // exp_date: '1901', // you can choose exp_date over exp_month+exp_year to send expiry date in one field only
+        security_code: '123',
+      } 
+};
+
+
+NPS.paymentMethodToken.create(PaymentMethodTokenParams, npsSuccessResponseHandler, npsErrorResponseHandler);  
+  
+  
+});
+  
+
+    
+  
+// });
+
+// });
+
+
+
+
+
+  
+  
+  
+</script>

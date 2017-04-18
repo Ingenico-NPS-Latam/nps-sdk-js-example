@@ -1,0 +1,269 @@
+
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<style>
+#payment-method-errors {color:red;}
+#payment-method-installments-description {color:green;}
+</style>
+
+<script type="text/javascript" src="https://sandbox.nps.com.ar/sdk/v1/NPS.js"></script>
+
+
+
+<script type="text/javascript">
+/**
+ * Configure Your Client Session
+ *
+ * You should configure your client session to be able to start to use NPS.js to identify your site while communicating with NPS. 
+ * To do this, use the call setClientSession. Remember to replace the client session call on sandbox with the production domain when you are ready to create real charges.
+ * 
+ * You must obtain your client session by calling from server-side the webservice method “CreateClientSession”
+*/
+NPS.setClientSession('aprY1iTjjBU9pctFQok4OTMHazqoy1j9IEbrpVqESbDfK6O7rguoxoPZIscVKyDr');
+
+// NPS Merchant ID
+NPS.setMerchantId('psp_test');
+
+// psp_Amount
+NPS.setAmount('120050');
+
+// psp_Country
+NPS.setCountry('CHL');
+
+// psp_Currency
+NPS.setCurrency('152');
+
+// Device Fingerprint Must Be Created Or Not
+NPS.setUseDeviceFingerprint(true);
+
+// ...
+window.onload = function() {
+  document.getElementById("payment-method-form").onsubmit = function(event) {
+    var paymentMethodForm;
+    paymentMethodForm = this;
+
+    // Void submition more than once
+    document.getElementById('payment-method-form-submit').setAttribute('disabled','disabled');
+
+    if(!document.getElementById("npsPaymentMethodTokenId") 
+     || !document.getElementById("npsPaymentMethodTokenId").value)
+    {
+      // Request a token from NPS:
+      NPS.paymentMethodToken.create(paymentMethodForm, npsSuccessResponseHandler, npsErrorResponseHandler);
+    }else {
+      if(document.getElementById("payment-method-form").elements['card[installments]']
+        && parseInt(document.getElementById("payment-method-form").elements['card[installments]'].value) > 0 ) 
+      {
+        paymentMethodForm.submit();      
+      }else {
+        npsErrorResponseHandler({
+          'object': 'error',
+          'type': 'invalid_request_error',
+          'message': "customer has not selected one of the installments options",
+          'message_to_purchaser': "you must choose one of the installments options"
+        });
+      }
+    }
+    
+    // Request a token from NPS as JSON:
+    /* NPS.token.create({
+      card: {
+        holder_name: 'Fer',
+        number: '4507990000000010',
+        exp_month: '01',
+        exp_year: '2019',
+        security_code: '123',
+      } 
+    }, npsSuccessResponseHandler, npsErrorResponseHandler); */
+
+    // Only submit when token is already loaded
+    return false;
+  };
+};
+
+var npsSuccessResponseHandler;
+npsSuccessResponseHandler = function(paymentMethodToken) {
+  var paymentMethodForm, npsPaymentMethodTokenId;
+  paymentMethodForm = document.getElementById("payment-method-form");
+  
+  alert(paymentMethodToken.id);
+  console.log(paymentMethodToken);
+  
+  // Append token_id in a way that allow the server to recieve the token by post
+  npsPaymentMethodTokenId = document.createElement("input"); 
+  npsPaymentMethodTokenId.setAttribute("type", "hidden");
+  npsPaymentMethodTokenId.setAttribute("name", "npsPaymentMethodTokenId");
+  npsPaymentMethodTokenId.setAttribute("id", "npsPaymentMethodTokenId");
+  npsPaymentMethodTokenId.setAttribute("value", paymentMethodToken.id);
+  paymentMethodForm.insertBefore(npsPaymentMethodTokenId,paymentMethodForm.firstChild);
+
+  if(paymentMethodToken.installmentsOptions) {
+    npsShowInstallmentsDetails(paymentMethodToken.installmentsOptions);
+    
+    // Only submit when installments is already confirmed
+    return false;
+  }
+
+  // And submit
+  paymentMethodForm.submit();
+};
+
+var npsErrorResponseHandler;
+npsErrorResponseHandler = function(response) {
+  var paymentMethodForm;
+  paymentMethodForm = document.getElementById("payment-method-form");
+  
+  // To retrieve errors on create token
+  console.log(response.message);
+  document.getElementById("payment-method-errors").innerHTML = response.message_to_purchaser;
+  document.getElementById("payment-method-form-submit").removeAttribute("disabled");
+  
+  // Only submit when token is already loaded
+  return false;
+};
+
+
+var npsShowInstallmentsDetails;
+npsShowInstallmentsDetails = function(installmentsOptions) {
+  if(installmentsOptions && installmentsOptions[0]) {
+    var num =(installmentsOptions[0].installmentAmount / 100).toLocaleString((null, {style:"currency", currency:null}));
+    document.getElementById("payment-method-installments-description").innerHTML = "make "+installmentsOptions[0].numPayments+" monthly payments of "+num;
+    // e.g: make 12 monthly payments of 12312313132
+    
+    document.getElementById("payment-method-form-submit").removeAttribute("disabled");
+  }  
+}
+  
+</script>
+
+
+    
+</head>
+<body>    
+
+<form action="" method="POST" id="payment-method-form">
+  <span id="payment-method-errors"></span>
+  <div class="form-row">
+      <label>Card Holder Name</label>
+      <input type="text" size="26" data-nps="card[holder_name]" value="John Smith" />
+  </div>
+  <div class="form-row">
+      <label>Card Number</label>
+      <input type="text" size="20" data-nps="card[number]" value="4507990000000010"/>
+  </div>
+  <div class="form-row">
+      <label>Card Security Code</label>
+      <input type="text" size="4" data-nps="card[security_code]" value="377" />
+  </div>
+  <div class="form-row">
+    <label>Card Expiration Date (MM/YYYY)</label>
+    <input type="text" size="2" data-nps="card[exp_month]" value="12" />
+    <span>/</span>
+    <input type="text" size="4" data-nps="card[exp_year]" value="2019" />
+  </div>
+  <div class="form-row">
+    <label>Card Expiration Date (YYYYMM)/(YYMM)</label>
+    <input type="text" size="6" data-nps="card[exp_date]" value="2012" />
+  </div>  
+  
+  <h2>INSTALLMENTS OPTIONS</h2>
+  
+  <div class="form-row">
+    <label>Installments</label>
+    <select name="card[installments]" id="payment-method-card-installments" data-nps="card[installments]">
+      <option value="">Choose an option</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="99">99</option>
+    </select>
+    <span id="payment-method-installments-description"></span>
+  </div>    
+  
+  <h2>OPTIONAL BILLING DATA</h2>
+  
+  <h3>Billing Address</h3>
+  
+  <div class="form-row">
+      <label>Street</label>
+      <input type="text" size="128" data-nps="billing[address][street]" value="callefalsa" name="billing-address-street" />
+  </div>
+  <div class="form-row">
+      <label>House-Number</label>
+      <input type="text" size="32" data-nps="billing[address][housenumber]" value="1234567-89012345" name="billing-address-housenumber" />
+  </div>  
+  <div class="form-row">
+      <label>Zip-Code</label>
+      <input type="text" size="128" data-nps="billing[address][zip]" value="12345-123" name="billing-address-housenumber" />
+  </div>    
+  <div class="form-row">
+      <label>City</label>
+      <input type="text" size="40" data-nps="billing[address][city]" value="capìtal federalªªªª" name="billing-address-city" />
+  </div>      
+  <div class="form-row">
+      <label>State</label>
+      <input type="text" size="40" data-nps="billing[address][state]" value="Ç^*?¿,.?&apos;¡ºª&gt;þ@?€¶?" name="billing-address-state" />
+  </div>      
+  <div class="form-row">
+      <label>Country</label>
+      <input type="text" size="3" data-nps="billing[address][country]" value="ARG" name="billing-address-country" />
+  </div>   
+  <div class="form-row">
+      <label>Additional-Info</label>
+      <input type="text" size="128" data-nps="billing[address][addinfo]" value="Es la casa roja" name="billing-address-addinfo" />
+  </div>    
+  
+  <h3>Billing Person</h3>
+  
+  <div class="form-row">
+      <label>First-Name</label>
+      <input type="text" size="128" data-nps="billing[person][firstname]" value="Juan Antonio" name="billing-person-firstname" />
+  </div>      
+  <div class="form-row">
+      <label>Middle-Name</label>
+      <input type="text" size="128" data-nps="billing[person][middlename]" value="Javier" name="billing-person-middlename" />
+  </div>    
+  <div class="form-row">
+      <label>Lastname</label>
+      <input type="text" size="128" data-nps="billing[person][lastname]" value="Perez" name="billing-person-lastname" />
+  </div>          
+  <div class="form-row">
+      <label>PhoneNumber1</label>
+      <input type="text" size="128" data-nps="billing[person][phonenumber1]" value="4123-1234" name="billing-person-phonenumber1" />
+  </div>           
+  <div class="form-row">
+      <label>PhoneNumber2</label>
+      <input type="text" size="128" data-nps="billing[person][phonenumber2]" value="4123-1234" name="billing-person-phonenumber2" />
+  </div>           
+  <div class="form-row">
+      <label>gender</label>
+      <input type="text" size="128" data-nps="billing[person][gender]" value="M" name="billing-person-gender" />
+  </div>    
+  <div class="form-row">
+      <label>birthday</label>
+      <input type="text" size="128" data-nps="billing[person][birthday]" value="1987-01-01" name="billing-person-birthday" />
+  </div>       
+  <div class="form-row">
+      <label>nationality</label>
+      <input type="text" size="128" data-nps="billing[person][nationality]" value="ARG" name="billing-person-nationality" />
+  </div>         
+  <div class="form-row">
+      <label>idtype</label>
+      <input type="text" size="128" data-nps="billing[person][idtype]" value="500" name="billing-person-idtype" />
+  </div>           
+  <div class="form-row">
+      <label>idnumber</label>
+      <input type="text" size="128" data-nps="billing[person][idnumber]" value="500" name="billing-person-idnumber" />
+  </div>             
+  
+  <button type="submit" id="payment-method-form-submit">Pay!</button>
+</form>
+
+</body>
+</html>
