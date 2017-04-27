@@ -8,10 +8,10 @@
 <script type="text/javascript" src="https://sandbox.nps.com.ar/sdk/v1/NPS.js"></script>
 
 <!-- STAGING -->
-<!-- <script type="text/javascript" src="https://implementacion.nps.com.ar/sdk/v1/NPS.js"></script> -->
+<!--script type="text/javascript" src="https://implementacion.nps.com.ar/sdk/v1/NPS.js"></script-->
 
 <!-- PRODUCTION -->
-<!--<script type="text/javascript" src="https://services2.nps.com.ar/sdk/v1/NPS.js"></script> -->
+<!--script type="text/javascript" src="https://services2.nps.com.ar/sdk/v1/NPS.js"></script-->
 
 <!-- To prevent problems with some older browsers, put the script tag in the page <head> or as the final line in the <body> at the end of your code. -->
 <!-- NPS.js should be loaded directly from Ingenico NPS servers. For example: https://sandbox.nps.com.ar/sdk/v1/NPS.js [^] -->
@@ -25,19 +25,19 @@
  * 
  * You must obtain your client session by calling from server-side the webservice method “CreateClientSession”
 */
-NPS.setClientSession('uuavTqRcgGHBVz4FvcBH3HtdiIMCZ8i3CdQRMxFFcvf2nxhU9koCSrgg21OVS07S');
+NPS.setClientSession("YOUR_CLIENT_SESSION");
 
 // NPS Merchant ID
-NPS.setMerchantId('psp_test');
+NPS.setMerchantId("YOUR_MERCHANT_ID");
 
 // psp_Amount
 NPS.setAmount('120050');
 
 // psp_Country
-NPS.setCountry('CHL');
+NPS.setCountry('ARG');
 
 // psp_Currency
-NPS.setCurrency('152');
+NPS.setCurrency('032');
 
 // ...
 window.onload = function() {
