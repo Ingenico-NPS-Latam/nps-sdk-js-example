@@ -6,7 +6,6 @@
 
 <style>
 #payment-method-errors {color:red;}
-#payment-method-installments-description {color:green;}
 </style>
 
 
@@ -36,17 +35,8 @@ NPS.setClientSession("YOUR_CLIENT_SESSION");
 // NPS Merchant ID
 NPS.setMerchantId("YOUR_MERCHANT_ID");
 
-// psp_Amount
-NPS.setAmount('120050');
-
-// psp_Country
-NPS.setCountry('ARG');
-
-// psp_Currency
-NPS.setCurrency('032');
-
 // Device Fingerprint Must Be Created Or Not
-NPS.setUseDeviceFingerprint(true);
+NPS.setUseDeviceFingerprint(false);
 
 // ...
 window.onload = function() {
@@ -63,18 +53,7 @@ window.onload = function() {
       // Request a token from NPS:
       NPS.paymentMethodToken.create(paymentMethodForm, npsSuccessResponseHandler, npsErrorResponseHandler);
     }else {
-      if(document.getElementById("payment-method-form").elements['card[installments]']
-        && parseInt(document.getElementById("payment-method-form").elements['card[installments]'].value) > 0 ) 
-      {
-        paymentMethodForm.submit();      
-      }else {
-        npsErrorResponseHandler({
-          'object': 'error',
-          'type': 'invalid_request_error',
-          'message': "customer has not selected one of the installments options",
-          'message_to_purchaser': "you must choose one of the installments options"
-        });
-      }
+      paymentMethodForm.submit();      
     }
     
     // Request a token from NPS as JSON:
@@ -109,13 +88,6 @@ npsSuccessResponseHandler = function(paymentMethodToken) {
   npsPaymentMethodTokenId.setAttribute("value", paymentMethodToken.id);
   paymentMethodForm.insertBefore(npsPaymentMethodTokenId,paymentMethodForm.firstChild);
 
-  if(paymentMethodToken.installmentsOptions) {
-    npsShowInstallmentsDetails(paymentMethodToken.installmentsOptions);
-    
-    // Only submit when installments is already confirmed
-    return false;
-  }
-
   // And submit
   paymentMethodForm.submit();
 };
@@ -134,18 +106,6 @@ npsErrorResponseHandler = function(response) {
   return false;
 };
 
-
-var npsShowInstallmentsDetails;
-npsShowInstallmentsDetails = function(installmentsOptions) {
-  if(installmentsOptions && installmentsOptions[0]) {
-    var num =(installmentsOptions[0].installmentAmount / 100).toLocaleString((null, {style:"currency", currency:null}));
-    document.getElementById("payment-method-installments-description").innerHTML = "make "+installmentsOptions[0].numPayments+" monthly payments of "+num;
-    // e.g: make 12 monthly payments of 12312313132
-    
-    document.getElementById("payment-method-form-submit").removeAttribute("disabled");
-  }  
-}
-  
 </script>
 
 
@@ -178,22 +138,6 @@ npsShowInstallmentsDetails = function(installmentsOptions) {
     <input type="text" size="6" data-nps="card[exp_date]" value="2012" />
   </div>  
   
-  <h2>INSTALLMENTS OPTIONS</h2>
-  
-  <div class="form-row">
-    <label>Installments</label>
-    <select name="card[installments]" id="payment-method-card-installments" data-nps="card[installments]">
-      <option value="">Choose an option</option>
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="99">99</option>
-    </select>
-    <span id="payment-method-installments-description"></span>
-  </div>    
   
   <h2>OPTIONAL BILLING DATA</h2>
   

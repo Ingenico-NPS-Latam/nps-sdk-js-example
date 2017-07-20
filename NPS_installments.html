@@ -6,19 +6,19 @@
 
 <style>
 #payment-method-errors {color:red;}
+#payment-method-installments-description {color:green;}
 </style>
+
 
 <!-- SANDBOX -->
 <script type="text/javascript" src="https://sandbox.nps.com.ar/sdk/v1/NPS.js"></script>
 
 <!-- STAGING -->
-<!-- <script type="text/javascript" src="https://implementacion.nps.com.ar/sdk/v1/NPS.js"></script> -->
+<!--script type="text/javascript" src="https://implementacion.nps.com.ar/sdk/v1/NPS.js"></script-->
 
 <!-- PRODUCTION -->
-<!--<script type="text/javascript" src="https://services2.nps.com.ar/sdk/v1/NPS.js"></script> -->
+<!--script type="text/javascript" src="https://services2.nps.com.ar/sdk/v1/NPS.js"></script-->
 
-<!-- To prevent problems with some older browsers, put the script tag in the page <head> or as the final line in the <body> at the end of your code. -->
-<!-- NPS.js should be loaded directly from Ingenico NPS servers. For example: https://sandbox.nps.com.ar/sdk/v1/NPS.js [^] -->
 
 
 <script type="text/javascript">
@@ -35,17 +35,20 @@ NPS.setClientSession("YOUR_CLIENT_SESSION");
 // NPS Merchant ID
 NPS.setMerchantId("YOUR_MERCHANT_ID");
 
+// psp_Amount
+NPS.setAmount('120050');
+
+// psp_Country
+NPS.setCountry('CHL');
+
+// psp_Currency
+NPS.setCurrency('152');
+
 // Device Fingerprint Must Be Created Or Not
 NPS.setUseDeviceFingerprint(false);
 
 // ...
 window.onload = function() {
-  npsShowCardInputs();
-  
-  document.getElementById("payment-method-select").onchange = function(event) {
-    npsShowCardInputs();
-  };
-  
   document.getElementById("payment-method-form").onsubmit = function(event) {
     var paymentMethodForm;
     paymentMethodForm = this;
@@ -57,9 +60,20 @@ window.onload = function() {
      || !document.getElementById("npsPaymentMethodTokenId").value)
     {
       // Request a token from NPS:
-      NPS.paymentMethodToken.recache(paymentMethodForm, npsSuccessResponseHandler, npsErrorResponseHandler);
+      NPS.paymentMethodToken.create(paymentMethodForm, npsSuccessResponseHandler, npsErrorResponseHandler);
     }else {
-      paymentMethodForm.submit();      
+      if(document.getElementById("payment-method-form").elements['card[installments]']
+        && parseInt(document.getElementById("payment-method-form").elements['card[installments]'].value) > 0 ) 
+      {
+        paymentMethodForm.submit();      
+      }else {
+        npsErrorResponseHandler({
+          'object': 'error',
+          'type': 'invalid_request_error',
+          'message': "customer has not selected one of the installments options",
+          'message_to_purchaser': "you must choose one of the installments options"
+        });
+      }
     }
     
     // Request a token from NPS as JSON:
@@ -94,6 +108,13 @@ npsSuccessResponseHandler = function(paymentMethodToken) {
   npsPaymentMethodTokenId.setAttribute("value", paymentMethodToken.id);
   paymentMethodForm.insertBefore(npsPaymentMethodTokenId,paymentMethodForm.firstChild);
 
+  if(paymentMethodToken.installmentsOptions) {
+    npsShowInstallmentsDetails(paymentMethodToken.installmentsOptions);
+    
+    // Only submit when installments is already confirmed
+    return false;
+  }
+
   // And submit
   paymentMethodForm.submit();
 };
@@ -113,19 +134,19 @@ npsErrorResponseHandler = function(response) {
 };
 
 
-var npsShowCardInputs;
-npsShowCardInputs = function() {
-  var inputs = document.getElementsByClassName('new-card-only');
-  for (var i = 0; i < inputs.length; i++) {
-    if(document.getElementById("payment-method-select").value) {
-      inputs[i].style.display = 'none';
-    }else {
-      inputs[i].style.display = '';
-    }
-  }    
+var npsShowInstallmentsDetails;
+npsShowInstallmentsDetails = function(installmentsOptions) {
+  if(installmentsOptions && installmentsOptions[0]) {
+    var num =(installmentsOptions[0].installmentAmount / 100).toLocaleString((null, {style:"currency", currency:null}));
+    document.getElementById("payment-method-installments-description").innerHTML = "make "+installmentsOptions[0].numPayments+" monthly payments of "+num;
+    // e.g: make 12 monthly payments of 12312313132
+    
+    document.getElementById("payment-method-form-submit").removeAttribute("disabled");
+  }  
 }
   
 </script>
+
 
     
 </head>
@@ -133,42 +154,48 @@ npsShowCardInputs = function() {
 
 <form action="" method="POST" id="payment-method-form">
   <span id="payment-method-errors"></span>
-  
   <div class="form-row">
-      <label>Card</label>
-      <select name="payment-method-select" id="payment-method-select" data-nps="card[payment_method_id]">
-                    <option value="mjjzqRclKxUBBAeGF3Yy7C81miBPCJhR">************0010</option>
-                    <option value="">New Card</option>
-      </select>
-  </div>  
-  
-  
-  <div class="form-row new-card-only">
       <label>Card Holder Name</label>
       <input type="text" size="26" data-nps="card[holder_name]" value="John Smith" />
   </div>
-  <div class="form-row new-card-only" id="card-number">
+  <div class="form-row">
       <label>Card Number</label>
       <input type="text" size="20" data-nps="card[number]" value="4507990000000010"/>
   </div>
-  <div class="form-row" id="card-security-code">
+  <div class="form-row">
       <label>Card Security Code</label>
       <input type="text" size="4" data-nps="card[security_code]" value="377" />
   </div>
-  <div class="form-row new-card-only" id="card-expiration-date">
+  <div class="form-row">
     <label>Card Expiration Date (MM/YYYY)</label>
     <input type="text" size="2" data-nps="card[exp_month]" value="12" />
     <span>/</span>
     <input type="text" size="4" data-nps="card[exp_year]" value="2019" />
   </div>
-  <div class="form-row new-card-only" id="card-expiration-date-alt">
+  <div class="form-row">
     <label>Card Expiration Date (YYYYMM)/(YYMM)</label>
     <input type="text" size="6" data-nps="card[exp_date]" value="2012" />
   </div>  
   
+  <h2>INSTALLMENTS OPTIONS</h2>
+  
+  <div class="form-row">
+    <label>Installments</label>
+    <select name="card[installments]" id="payment-method-card-installments" data-nps="card[installments]">
+      <option value="">Choose an option</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+      <option value="99">99</option>
+    </select>
+    <span id="payment-method-installments-description"></span>
+  </div>    
   
   <h2>OPTIONAL BILLING DATA</h2>
-    
+  
   <h3>Billing Address</h3>
   
   <div class="form-row">

@@ -33,12 +33,6 @@ NPS.setMerchantId("YOUR_MERCHANT_ID");
 // psp_Amount
 NPS.setAmount('120050');
 
-// psp_Country
-NPS.setCountry('ARG');
-
-// psp_Currency
-NPS.setCurrency('032');
-
 // ...
 window.onload = function() {
   var paymentMethods;
@@ -62,7 +56,7 @@ window.onload = function() {
   
   
   document.getElementById("payment-method-form").onsubmit = function(event) {
-    var paymentMethodForm, cardsInstallments, paymentMethodTokenIds, hasPaymentMethodToken;
+    var paymentMethodForm, paymentMethodTokenIds, hasPaymentMethodToken;
     paymentMethodForm = this;
 
     // Void submition more than once
@@ -75,19 +69,6 @@ window.onload = function() {
       // Request a token from NPS:
       NPS.paymentMethodToken.create(paymentMethodForm, npsSuccessResponseHandler, npsErrorResponseHandler);
     }else {
-      cardsInstallments = document.getElementsByClassName('payment-method-card-installments');
-      for(i in cardsInstallments) {
-        if(!(cardsInstallments[i].value > 0)) {
-          npsErrorResponseHandler({
-            'object': 'error',
-            'type': 'invalid_request_error',
-            'message': "customer has not selected one of the installments options",
-            'message_to_purchaser': "you must choose one of the installments options"
-          });
-          return;
-        }
-      }
-      
       paymentMethodForm.submit();
     }    
     // Request a token from NPS as JSON:
@@ -131,19 +112,7 @@ npsSuccessResponseHandler = function(paymentMethodToken) {
       npsPaymentMethodTokenId.setAttribute("class", "npsPaymentMethodTokenId");
       npsPaymentMethodTokenId.setAttribute("value", paymentMethodToken[i].id);
       paymentMethodForm.insertBefore(npsPaymentMethodTokenId,paymentMethodForm.firstChild);      
-      
-      if(paymentMethodToken[i].installmentsOptions) {
-        npsShowInstallmentsDetails(paymentMethodToken[i].installmentsOptions, i);
-        
-        isReady4Submit = false;
-      }      
     }
-    
-    if(!isReady4Submit) {
-      // Only submit when installments is already confirmed
-      return false;
-    }
-    
   }else {
     npsPaymentMethodTokenId = document.createElement("input"); 
     npsPaymentMethodTokenId.setAttribute("type", "hidden");
@@ -152,13 +121,6 @@ npsSuccessResponseHandler = function(paymentMethodToken) {
     npsPaymentMethodTokenId.setAttribute("class", "npsPaymentMethodTokenId");
     npsPaymentMethodTokenId.setAttribute("value", paymentMethodToken.id);
     paymentMethodForm.insertBefore(npsPaymentMethodTokenId,paymentMethodForm.firstChild);    
-    
-    if(paymentMethodToken.installmentsOptions) {
-      npsShowInstallmentsDetails(paymentMethodToken.installmentsOptions);
-
-      // Only submit when installments is already confirmed
-      return false;
-    }    
   }
 
   // And submit
@@ -190,20 +152,6 @@ npsShowCardInputs = function(cardIndex) {
     }
   }     
 }
-
-var npsShowInstallmentsDetails;
-npsShowInstallmentsDetails = function(installmentsOptions, cardIndex) {
-  var customSelector, customSelector, num;
-  customSelector = !isNaN(cardIndex) ? "payment-method-installments-description-"+cardIndex : "payment-method-installments-description";  
-  if(installmentsOptions && installmentsOptions[0]) {
-    num = (installmentsOptions[0].installmentAmount / 100).toLocaleString((null, {style:"currency", currency:null}));
-    document.getElementById(customSelector).innerHTML = "make "+installmentsOptions[0].numPayments+" monthly payments of "+num;
-    // e.g: make 12 monthly payments of 12312313132
-
-    document.getElementById("payment-method-form-submit").removeAttribute("disabled");
-  }
-}
-
 </script>
 
 <style>
@@ -245,26 +193,6 @@ npsShowInstallmentsDetails = function(installmentsOptions, cardIndex) {
   </div>
   
   
-  <h2>CARD-1-INSTALLMENTS</h2>
-  
-  <div class="form-row">
-      <label>Amount</label>
-      <input type="text" size="20" data-nps="cards[0][amount]" value="80034" /> (in cents)
-  </div>    
-  <div class="form-row">
-    <label>Installments</label>
-    <select name="cards[0][installments]" id="payment-method-card-installments-0" class="payment-method-card-installments" data-nps="cards[0][installments]">
-      <option value="">Choose an option</option>
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="99">99</option>
-    </select>
-    <span id="payment-method-installments-description-0"></span>
-  </div>      
   
   <h2>CARD-2</h2>
   
@@ -293,28 +221,6 @@ npsShowInstallmentsDetails = function(installmentsOptions, cardIndex) {
     <span>/</span>
     <input type="text" size="4" data-nps="cards[1][exp_year]" value="2019" />
   </div>  
-  
-  <h2>CARD-2-INSTALLMENTS</h2>
-  
-  <div class="form-row">
-      <label>Amount</label>
-      <input type="text" size="20" data-nps="cards[1][amount]" value="40016" /> (in cents)
-  </div>      
-  <div class="form-row">
-    <label>Installments</label>
-    <select name="cards[1][installments]" id="payment-method-card-installments-1" class="payment-method-card-installments" data-nps="cards[1][installments]">
-      <option value="">Choose an option</option>
-      <option value="1">1</option>
-      <option value="2">2</option>
-      <option value="3">3</option>
-      <option value="4">4</option>
-      <option value="5">5</option>
-      <option value="6">6</option>
-      <option value="99">99</option>
-    </select>
-    <span id="payment-method-installments-description-1"></span>
-  </div>    
-  
   
   <h2>OPTIONAL BILLING DATA</h2>
   
